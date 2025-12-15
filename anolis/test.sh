@@ -147,7 +147,7 @@ test_check_kconfig() {
 	  echo "$git_status_output" >> "${LOGS_DIR}/check_Kconfig.log"
 	  echo "" >> "${LOGS_DIR}/check_Kconfig.log"
 	  echo "  Please update the Kconfig baseline according to:" >> "${LOGS_DIR}/check_Kconfig.log"
-	  echo "     anolis/configs/How-To-Modify-Kconfig.zh.md" >> "${LOGS_DIR}/check_Kconfig.log"
+	  echo "     ${SCRIPT_DIR}/'How_to_resolve_kconfig_test_failure?.md'" >> "${LOGS_DIR}/check_Kconfig.log"
 	  check_status=1
   else
 	  # Working tree is clean

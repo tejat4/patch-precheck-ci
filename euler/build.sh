@@ -313,6 +313,8 @@ for p in "${PATCHES_DIR}"/*.patch; do
   fi
 
   # Insert Signed-off-by before first '---'
+  SOB_LINE="Signed-off-by: ${SIGNER_NAME} <${SIGNER_EMAIL}>"
+  if ! grep -qF "${SOB_LINE}" "${p}"; then
   awk -v SOB="Signed-off-by: ${SIGNER_NAME} <${SIGNER_EMAIL}>" '
     BEGIN { inserted=0 }
     {
@@ -328,6 +330,7 @@ for p in "${PATCHES_DIR}"/*.patch; do
         print SOB
       }
     }' "${p}" > "${p}.tmp" && mv "${p}.tmp" "${p}"
+  fi
 done
 
 # Ensure repo clean

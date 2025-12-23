@@ -37,7 +37,40 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
+
+# Function to list available tests
+list_tests() {
+  echo ""
+  echo -e "${CYAN}╔═════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║   openEuler - Available Tests   ║${NC}"
+  echo -e "${CYAN}╚═════════════════════════════════╝${NC}"
+  echo ""
+  echo -e "${GREEN}Test Name              Description${NC}"
+  echo -e "${GREEN}─────────────────────────────────────────────────────────${NC}"
+  echo -e "  1. check_dependency    Check patch dependencies"
+  echo -e "  2. build_allmod        Build with allmodconfig"
+  echo -e "  3. check_patch         Run checkpatch.pl on patches"
+  echo -e "  4. check_format        Validate commit message format"
+  echo -e "  5. rpm_build           Build kernel RPM packages"
+  echo -e "  6. boot_kernel         Boot VM with built kernel"
+  echo ""
+  echo -e "${BLUE}Usage:${NC}"
+  echo "  $0                     - Run all enabled tests"
+  echo "  $0 list/--list/-l      - Show this list"
+  echo "  $0 <test_name>         - Run specific test"
+  echo ""
+  echo -e "${YELLOW}Examples:${NC}"
+  echo "  $0 check_dependency"
+  echo ""
+  exit 0
+}
+
+# Check if list command is requested
+if [ "${1:-}" == "list" ] || [ "${1:-}" == "--list" ] || [ "${1:-}" == "-l" ]; then
+  list_tests
+fi
 
 : "${LINUX_SRC_PATH:?missing in config}"
 : "${SIGNER_NAME:?missing in config}"
@@ -646,12 +679,57 @@ test_boot_kernel() {
 
 # ---- TEST EXECUTION ----
 
-[ "${TEST_CHECK_DEPENDENCY:-no}" == "yes" ] && test_check_dependency
-[ "$TEST_BUILD_ALLMOD" == "yes" ] && test_build_allmod
-[ "$TEST_CHECK_PATCH" == "yes" ] && test_check_patch
-[ "$TEST_CHECK_FORMAT" == "yes" ] && test_check_format
-[ "$TEST_RPM_BUILD" == "yes" ] && test_rpm_build
-[ "$TEST_BOOT_KERNEL" == "yes" ] && test_boot_kernel
+# Check if specific test is requested
+SPECIFIC_TEST="${1:-}"
+
+if [ -n "$SPECIFIC_TEST" ]; then
+  # Run specific test directly
+  echo -e "${BLUE}Running specific test: ${SPECIFIC_TEST}${NC}"
+  echo ""
+
+  case "$SPECIFIC_TEST" in
+    check_dependency)
+      test_check_dependency
+      ;;
+    build_allmod)
+      test_build_allmod
+      ;;
+    check_patch)
+      test_check_patch
+      ;;
+    check_format)
+      test_check_format
+      ;;
+    rpm_build)
+      test_rpm_build
+      ;;
+    boot_kernel)
+      test_boot_kernel
+      ;;
+    *)
+      echo -e "${RED}Error: Unknown test '$SPECIFIC_TEST'${NC}"
+      echo ""
+      echo "Available tests:"
+      echo "  - check_dependency"
+      echo "  - build_allmod"
+      echo "  - check_patch"
+      echo "  - check_format"
+      echo "  - rpm_build"
+      echo "  - boot_kernel"
+      echo ""
+      echo "Run '$0 list' for detailed information"
+      exit 1
+      ;;
+  esac
+else
+  # Run all enabled tests
+  [ "${TEST_CHECK_DEPENDENCY:-yes}" == "yes" ] && test_check_dependency
+  [ "${TEST_BUILD_ALLMOD:-yes}" == "yes" ] && test_build_allmod
+  [ "${TEST_CHECK_PATCH:-yes}" == "yes" ] && test_check_patch
+  [ "${TEST_CHECK_FORMAT:-yes}" == "yes" ] && test_check_format
+  [ "${TEST_RPM_BUILD:-yes}" == "yes" ] && test_rpm_build
+  [ "${TEST_BOOT_KERNEL:-yes}" == "yes" ] && test_boot_kernel
+fi
 
 # ---- SUMMARY ----
 {

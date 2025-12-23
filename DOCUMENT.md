@@ -140,16 +140,19 @@ make test # Execute all tests
 
 ## Make Targets
 
-| Target        | Description                            |
-|---------------|----------------------------------------|
-| config        | Interactive configuration wizard       |
-| build         | Generate/apply patches & build         |
-| test          | Run distribution-specific test suite   |
-| clean         | Remove logs/build outputs              |
-| reset         | Reset git to saved HEAD                |
-| distclean     | Remove all artifacts/config            |
-| update-tests  | Update test configuration only         |
-| help          | Display usage info                     |
+| Target             | Description                            |
+|--------------------|----------------------------------------|
+| config             | Interactive configuration wizard       |
+| build              | Generate/apply patches & build         |
+| test               | Run distribution-specific test suite   |
+| list-tests         | List available tests for configured    |
+| anolis-test=<name> | Run specific OpenAnolis test           |
+| euler-test=<name>  | Run specific openEuler test            |
+| clean              | Remove logs/build outputs              |
+| reset              | Reset git to saved HEAD                |
+| distclean          | Remove all artifacts/config            |
+| update-tests       | Update test configuration only         |
+| help               | Display usage info                     |
 
 ## Security Considerations
 

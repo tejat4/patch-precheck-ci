@@ -4,7 +4,7 @@
 
 SHELL := /bin/bash
 .ONESHELL:
-.PHONY: help config build test clean reset distclean update-tests update
+.PHONY: help config build test list-tests anolis-test euler-test clean reset distclean update-tests update
 
 # Always update repo before any target
 update:
@@ -58,6 +58,9 @@ help:
 	@echo "  make config     - Configure target distribution"
 	@echo "  make build      - Build kernel (generate/apply patches)"
 	@echo "  make test       - Run distro-specific tests"
+	@echo "  make list-tests          - List available tests for configured distro"
+	@echo "  make anolis-test=<name>  - Run specific OpenAnolis test"
+	@echo "  make euler-test=<name>   - Run specific openEuler test"
 	@echo "  make clean      - Remove logs/ and outputs/"
 	@echo "  make reset      - Reset git repo to saved HEAD"
 	@echo "  make distclean  - Remove all artifacts and configs"
@@ -118,6 +121,51 @@ update-tests: validate
 	fi; \
 	echo -e "$(BLUE)Updating $$DISTRO test configuration...$(NC)"; \
 	bash $$DISTRO_DIR/configure.sh --tests
+
+# List available tests for configured distro
+list-tests: validate
+	@. $(DISTRO_CONFIG); \
+	if [ ! -f "$$DISTRO_DIR/test.sh" ]; then \
+		echo -e "$(RED)No test script found: $$DISTRO_DIR/test.sh$(NC)"; \
+		exit 1; \
+	fi; \
+	bash $$DISTRO_DIR/test.sh list
+
+# Run specific OpenAnolis test
+anolis-test:
+	@if [ -z "$(anolis-test)" ]; then \
+		echo -e "$(RED)Error: No test specified$(NC)"; \
+		echo "Usage: make anolis-test=<test_name>"; \
+		echo "Run 'make list-tests' for detailed information"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "anolis/.configure" ]; then \
+		echo -e "$(RED)Error: OpenAnolis not configured. Run 'make config' first.$(NC)"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "anolis/test.sh" ]; then \
+		echo -e "$(RED)Error: Test script not found: anolis/test.sh$(NC)"; \
+		exit 1; \
+	fi; \
+	bash anolis/test.sh $(anolis-test)
+
+# Run specific openEuler test
+euler-test:
+	@if [ -z "$(euler-test)" ]; then \
+		echo -e "$(RED)Error: No test specified$(NC)"; \
+		echo "Usage: make euler-test=<test_name>"; \
+		echo "Run 'make list-tests' for detailed information"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "euler/.configure" ]; then \
+		echo -e "$(RED)Error: openEuler not configured. Run 'make config' first.$(NC)"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "euler/test.sh" ]; then \
+		echo -e "$(RED)Error: Test script not found: euler/test.sh$(NC)"; \
+		exit 1; \
+	fi; \
+	bash euler/test.sh $(euler-test)
 
 # Validate configuration exists
 validate:

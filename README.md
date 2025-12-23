@@ -34,13 +34,16 @@ git clone https://github.com/SelamHemanth/patch-precheck-ci.git
 cd patch-precheck-ci
 ```
 
-* `make config`     - Configure target distribution
-* `make build`      - Build kernel
-* `make test`       - Run distro-specific tests
-* `make clean`      - Remove logs/ and outputs/
-* `make reset`      - Reset git repo to saved HEAD
-* `make distclean`  - Remove all artifacts and configs
-* `make update-tests` - Update test configuration only
+* `make config`             - Configure target distribution
+* `make build`              - Build kernel
+* `make test`               - Run distro-specific tests
+* `make list-tests`         - List available tests for configured distro
+* `make anolis-test=<name>` - Run specific OpenAnolis test
+* `make euler-test=<name>`  - Run specific openEuler test
+* `make clean`              - Remove logs/ and outputs/
+* `make reset`              - Reset git repo to saved HEAD
+* `make distclean`          - Remove all artifacts and configs
+* `make update-tests`       - Update test configuration only
 
 ---
 

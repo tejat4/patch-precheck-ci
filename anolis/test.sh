@@ -36,7 +36,42 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
+
+# Function to list available tests
+list_tests() {
+  echo ""
+  echo -e "${CYAN}╔═════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║     OpenAnolis - Available Tests    ║${NC}"
+  echo -e "${CYAN}╚═════════════════════════════════════╝${NC}"
+  echo ""
+  echo -e "${GREEN}Test Name                    Description${NC}"
+  echo -e "${GREEN}─────────────────────────────────────────────────────────${NC}"
+  echo -e "  1. check_kconfig           Validate kernel configuration"
+  echo -e "  2. build_allyes_config     Build with allyesconfig"
+  echo -e "  3. build_allno_config      Build with allnoconfig"
+  echo -e "  4. build_anolis_defconfig  Build with anolis_defconfig"
+  echo -e "  5. build_anolis_debug      Build with anolis-debug_defconfig"
+  echo -e "  6. anck_rpm_build          Build ANCK RPM packages"
+  echo -e "  7. check_kapi              Check kernel ABI compatibility"
+  echo -e "  8. boot_kernel_rpm         Boot VM with built kernel RPM"
+  echo ""
+  echo -e "${BLUE}Usage:${NC}"
+  echo "  $0                         - Run all enabled tests"
+  echo "  $0 list/--list/-l          - Show this list"
+  echo "  $0 <test_name>             - Run specific test"
+  echo ""
+  echo -e "${YELLOW}Examples:${NC}"
+  echo "  $0 check_kconfig"
+  echo ""
+  exit 0
+}
+
+# Check if list command is requested
+if [ "${1:-}" == "list" ] || [ "${1:-}" == "--list" ] || [ "${1:-}" == "-l" ]; then
+  list_tests
+fi
 
 : "${LINUX_SRC_PATH:?missing in config}"
 
@@ -561,15 +596,67 @@ test_check_kapi() {
 }
 
 # ---- TEST EXECUTION ----
+# Check if specific test is requested
+SPECIFIC_TEST="${1:-}"
 
-[ "$TEST_CHECK_KCONFIG" == "yes" ] && test_check_kconfig
-[ "$TEST_BUILD_ALLYES" == "yes" ] && test_build_allyes_config
-[ "$TEST_BUILD_ALLNO" == "yes" ] && test_build_allno_config
-[ "$TEST_BUILD_DEFCONFIG" == "yes" ] && test_build_anolis_defconfig
-[ "$TEST_BUILD_DEBUG" == "yes" ] && test_build_anolis_debug_defconfig
-[ "$TEST_RPM_BUILD" == "yes" ] && test_anck_rpm_build
-[ "$TEST_CHECK_KAPI" == "yes" ] && test_check_kapi
-[ "$TEST_BOOT_KERNEL" == "yes" ] && test_boot_kernel_rpm
+if [ -n "$SPECIFIC_TEST" ]; then
+  # Run specific test directly
+  echo -e "${BLUE}Running specific test: ${SPECIFIC_TEST}${NC}"
+  echo ""
+
+  case "$SPECIFIC_TEST" in
+    check_kconfig)
+      test_check_kconfig
+      ;;
+    build_allyes_config)
+      test_build_allyes_config
+      ;;
+    build_allno_config)
+      test_build_allno_config
+      ;;
+    build_anolis_defconfig)
+      test_build_anolis_defconfig
+      ;;
+    build_anolis_debug)
+      test_build_anolis_debug_defconfig
+      ;;
+    anck_rpm_build)
+      test_anck_rpm_build
+      ;;
+    check_kapi)
+      test_check_kapi
+      ;;
+    boot_kernel_rpm)
+      test_boot_kernel_rpm
+      ;;
+    *)
+      echo -e "${RED}Error: Unknown test '$SPECIFIC_TEST'${NC}"
+      echo ""
+      echo "Available tests:"
+      echo "  - check_kconfig"
+      echo "  - build_allyes_config"
+      echo "  - build_allno_config"
+      echo "  - build_anolis_defconfig"
+      echo "  - build_anolis_debug"
+      echo "  - anck_rpm_build"
+      echo "  - check_kapi"
+      echo "  - boot_kernel_rpm"
+      echo ""
+      echo "Run '$0 list' for detailed information"
+      exit 1
+      ;;
+  esac
+else
+  # Run all enabled tests
+  [ "${TEST_CHECK_KCONFIG:-yes}" == "yes" ] && test_check_kconfig
+  [ "${TEST_BUILD_ALLYES:-yes}" == "yes" ] && test_build_allyes_config
+  [ "${TEST_BUILD_ALLNO:-yes}" == "yes" ] && test_build_allno_config
+  [ "${TEST_BUILD_DEFCONFIG:-yes}" == "yes" ] && test_build_anolis_defconfig
+  [ "${TEST_BUILD_DEBUG:-yes}" == "yes" ] && test_build_anolis_debug_defconfig
+  [ "${TEST_RPM_BUILD:-yes}" == "yes" ] && test_anck_rpm_build
+  [ "${TEST_CHECK_KAPI:-yes}" == "yes" ] && test_check_kapi
+  [ "${TEST_BOOT_KERNEL:-yes}" == "yes" ] && test_boot_kernel_rpm
+fi
 
 # ---- SUMMARY ----
 {

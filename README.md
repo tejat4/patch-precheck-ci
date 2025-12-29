@@ -12,6 +12,7 @@ This tool automates distribution detection, configuration, patch application, an
 - Password-based authentication for unattended testing
 - Unified interface via `make` targets
 - Clean separation of logs, outputs, and patches
+- Web-based dashboard for monitoring and control
 
 ---
 
@@ -19,6 +20,30 @@ This tool automates distribution detection, configuration, patch application, an
 - **OpenAnolis**
 - **OpenEuler**
 - **OpenCloud** (`🚧 Implementing...`)
+
+---
+
+## 🌐 Web Interface
+
+A modern, responsive web interface is available for easier interaction with the tool.
+
+### Quick Start
+
+```bash
+cd patch-precheck-ci/web
+./start.sh
+```
+
+Access at: `http://your-server-ip:5000`
+
+### Features
+- 🎨 Modern purple gradient UI with real-time updates
+- ⚙️ Interactive configuration wizard
+- 🔨 Build progress tracking with live status
+- 🧪 Individual and batch test execution
+- 📊 Real-time progress bars and status indicators
+- 📝 Log viewer with popup modals
+- 🎯 One-click operations for all make commands
 
 ---
 

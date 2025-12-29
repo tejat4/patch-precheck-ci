@@ -2,17 +2,18 @@
 
 ## Overview
 
-The Patch Pre-Check CI Tool is an automated testing framework designed to validate Linux kernel patches across different distributions before submission. It streamlines patch validation by automating patch application, kernel builds, distribution-specific testing.
+The Patch Pre-Check CI Tool is an automated testing framework designed to validate Linux kernel patches across different distributions before submission. It streamlines patch validation by automating patch application, kernel builds, distribution-specific testing, and provides both command-line and web-based interfaces for enhanced usability.
 
 ## Features
 
 - **Automated Patch Processing:** Generates patches from git commits and applies them sequentially
 - **Incremental Build Testing:** Tests each patch individually to identify build-breaking changes early
-- **Comprehensive Test Suite:** Configuration validation, multiple build configurations,distribution-specific testing
+- **Comprehensive Test Suite:** Configuration validation, multiple build configurations, distribution-specific testing
 - **Smart Configuration:** Interactive wizard with sensible defaults
 - **Password Management:** Secure storage of host and VM credentials for unattended testing
 - **Clean Workflow:** Automatic git state management with rollback
 - **VM Boot Verification:** Automated kernel installation, boot, and version verification on remote VMs
+- **Web Interface:** Modern, responsive dashboard for monitoring and controlling all operations
 
 ## Supported Distributions
 
@@ -43,7 +44,14 @@ For VM boot testing:
 sudo yum install -y sshpass
 ```
 
+For Web Interface:
+```bash
+pip3 install Flask Flask-CORS Werkzeug --user
+```
+
 ### Getting Started
+
+#### Command Line Interface
 
 ```bash
 git clone https://github.com/SelamHemanth/patch-precheck-ci.git
@@ -52,6 +60,14 @@ cd patch-precheck-ci
 make config # Run config wizard
 make build # Build/test patches
 make test # Execute all tests
+```
+
+#### Web Interface
+
+```bash
+cd patch-precheck-ci/web
+./start.sh
+# Access at: http://your-server-ip:5000
 ```
 
 ### Configuration Steps
@@ -109,7 +125,7 @@ make test # Execute all tests
      - Linux source code path
      - Signed-off-by name/email
      - Euler Bugzilla ID
-     - Patch category (deafult: feature)
+     - Patch category (default: feature)
      - Number of patches to apply (from HEAD)
      - Build threads (default: CPU cores)
 
@@ -154,6 +170,195 @@ make test # Execute all tests
 | update-tests       | Update test configuration only         |
 | help               | Display usage info                     |
 
+## Web Interface
+
+### Overview
+
+The web interface provides a modern, graphical dashboard for interacting with the Patch Pre-Check CI Tool without using the command line.
+
+### Features
+
+#### Dashboard
+- **Real-time Status Display:** Shows current configuration, distribution, and system state
+- **Configuration Badge:** Visual indicator of system readiness
+- **Distribution Selector:** Quick switching between OpenAnolis and openEuler
+
+#### Configuration Management
+- **Interactive Form:** Multi-section wizard with validation
+  - General: Kernel source, author info, bugzilla ID, patch settings
+  - Build: Thread configuration
+  - VM: Network and authentication settings
+  - Host: Local authentication
+- **View Configuration:** Display current settings with one click
+- **Validation:** Client-side checks for required fields
+
+#### Build Operations
+- **Progress Tracking:** Real-time progress bars showing build status
+- **Status Indicators:** Running, completed, and failed states
+- **Elapsed Time:** Live tracking of operation duration
+- **Log Access:** Immediate access to build logs via popup modal
+
+#### Test Management
+- **Test Grid:** Visual display of all available tests
+- **Individual Execution:** Run any test with one click
+- **Batch Execution:** "Run All Tests" option
+- **Test Status Icons:**
+  - 🔵 Spinning: Test in progress
+  - ✅ Green: Test passed
+  - ❌ Red: Test failed
+- **Progress Tracking:** Per-test status and timing
+
+#### Log Viewer
+- **Popup Modal:** Full-screen terminal-style log display
+- **Dark Theme:** Easy-to-read console output
+- **Automatic Mapping:** Direct access to distribution-specific logs
+- **Scrollable:** Handle large log files efficiently
+
+#### Maintenance Operations
+- **Clean:** Remove logs and build artifacts (with confirmation)
+- **Reset:** Restore git repository state (double confirmation)
+- **Safety Checks:** Prevent accidental data loss
+
+### Architecture
+
+#### Backend (Flask)
+- **RESTful API:** JSON-based communication
+- **Job Management:** Background task execution with threading
+- **Log Mapping:** Automatic detection of distribution-specific log files
+- **Configuration Storage:** Direct integration with .configure files
+- **Make Integration:** Executes make commands in project root
+
+#### Frontend (Vue.js)
+- **Single Page Application:** No page reloads
+- **Reactive Updates:** Auto-refresh every 2 seconds
+- **Modern UI:** Purple gradient design with Font Awesome icons
+- **Responsive:** Works on desktop and mobile devices
+- **Modal System:** Popups for configuration, logs, and confirmations
+
+### API Endpoints
+
+| Endpoint                | Method | Description                    |
+|-------------------------|--------|--------------------------------|
+| `/api/status`           | GET    | System configuration status    |
+| `/api/config/fields`    | GET    | Get form fields for distro     |
+| `/api/config`           | GET    | Retrieve current configuration |
+| `/api/config`           | POST   | Save configuration             |
+| `/api/tests`            | GET    | List available tests           |
+| `/api/build`            | POST   | Run build operation            |
+| `/api/test/all`         | POST   | Run all tests                  |
+| `/api/test/<name>`      | POST   | Run specific test              |
+| `/api/clean`            | POST   | Clean artifacts                |
+| `/api/reset`            | POST   | Reset git repository           |
+| `/api/jobs`             | GET    | List all jobs                  |
+| `/api/jobs/<id>`        | GET    | Get job details                |
+| `/api/jobs/<id>/log`    | GET    | Get job log output             |
+
+### Installation
+
+```bash
+# Create web directory structure
+mkdir -p web/templates
+
+# Copy files
+cp server.py web/
+cp start.sh web/
+cp requirements.txt web/
+cp index.html web/templates/
+
+# Make launcher executable
+chmod +x web/start.sh
+
+# Install dependencies
+pip3 install -r web/requirements.txt --user
+
+# Start server
+cd web
+./start.sh
+```
+
+### Usage
+
+1. **Start Server:**
+   ```bash
+   cd web
+   ./start.sh
+   ```
+
+2. **Access Dashboard:**
+   - Open browser: `http://server-ip:5000`
+
+3. **Configure System:**
+   - Select distribution (OpenAnolis or openEuler)
+   - Click "Configure System"
+   - Fill in all required fields
+   - Save configuration
+
+4. **Run Operations:**
+   - Click "Run Build" to build patches
+   - Select individual tests or "Run All Tests"
+   - Monitor progress in real-time
+   - View logs with one click
+
+5. **Maintenance:**
+   - Use "Clean" to remove temporary files
+   - Use "Reset" to restore git state
+
+### Security Considerations
+
+#### Network Access
+- Server binds to `0.0.0.0:5000` by default
+- Configure firewall: `sudo firewall-cmd --add-port=5000/tcp --permanent`
+- Consider using reverse proxy (Nginx) for HTTPS
+- Restrict access to trusted networks
+
+#### Authentication
+- Currently no authentication implemented
+- Suitable for isolated lab networks
+- For production: implement API key or OAuth
+
+#### Password Storage
+- Passwords stored in `.configure` files
+- Same security concerns as CLI interface
+- Consider using SSH keys for VM access
+
+### Troubleshooting
+
+**Frontend Not Loading:**
+```bash
+# Check if index.html exists
+ls -la web/templates/index.html
+
+# Check server logs for path errors
+```
+
+**Logs Not Displaying:**
+```bash
+# Verify logs directory exists
+ls -la logs/
+
+# Run a test to generate logs
+make anolis-test=check_kconfig
+
+# Check log file was created
+ls -la logs/check_Kconfig.log
+```
+
+**Cannot Access from Network:**
+```bash
+# Open firewall
+sudo firewall-cmd --add-port=5000/tcp --permanent
+sudo firewall-cmd --reload
+
+# Check port is listening
+sudo netstat -tulpn | grep 5000
+```
+
+**Module Not Found:**
+```bash
+# Install dependencies
+pip3 install -r web/requirements.txt --user --break-system-packages
+```
+
 ## Security Considerations
 
 ### Password Storage
@@ -166,6 +371,13 @@ make test # Execute all tests
 - Currently uses `StrictHostKeyChecking=no` for automation
 - For production, configure proper SSH key authentication
 - Use known_hosts verification in secure environments
+
+### Web Interface Security
+- No authentication by default
+- Suitable for trusted networks only
+- Consider implementing authentication for production
+- Use HTTPS with reverse proxy in production
+- Restrict firewall access to known IPs
 
 ## Contributing
 

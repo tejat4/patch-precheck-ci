@@ -9,6 +9,7 @@ import subprocess
 import threading
 import uuid
 import signal
+import re
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -32,22 +33,33 @@ TORVALDS_REPO = os.path.join(PROJECT_ROOT, '.torvalds-linux')
 # Job storage with process tracking
 jobs = {}
 job_lock = threading.Lock()
-job_processes = {}  # NEW: Store process objects for each job
+job_processes = {}
+
+def clean_ansi_codes(text):
+    """Remove ANSI color codes and escape sequences from text"""
+    # Remove ANSI escape sequences
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*[mGKHfJ]|\x1b\[[\d;]*[A-Za-z]|\x1b\].*?\x07|\x1b\[.*?[@-~]')
+    text = ansi_escape.sub('', text)
+
+    # Remove common color codes like [0;34m, [0m, etc.
+    text = re.sub(r'\[\d+(?:;\d+)*m', '', text)
+
+    # Remove other escape sequences
+    text = re.sub(r'\x1b[@-_][0-?]*[ -/]*[@-~]', '', text)
+
+    return text
 
 def clone_torvalds_repo_silent():
     """Clone Torvalds repo silently if not exists"""
     try:
         if not os.path.exists(TORVALDS_REPO):
-            # Clone silently (suppress all output)
             subprocess.run(
                 ['git', 'clone', '--bare', 'https://github.com/torvalds/linux.git', TORVALDS_REPO],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False
             )
-        # If already exists, skip silently
     except Exception:
-        # Silently ignore errors
         pass
 
 def get_distro_config():
@@ -106,10 +118,9 @@ def run_make_command(command, job_id):
             cwd=PROJECT_ROOT,
             universal_newlines=True,
             bufsize=1,
-            preexec_fn=os.setsid  # NEW: Create process group for proper cleanup
+            preexec_fn=os.setsid
         )
 
-        # NEW: Store process object
         with job_lock:
             job_processes[job_id] = process
 
@@ -122,12 +133,10 @@ def run_make_command(command, job_id):
         process.wait()
         exit_code = process.returncode
 
-        # NEW: Remove process from tracking
         with job_lock:
             if job_id in job_processes:
                 del job_processes[job_id]
 
-        # Find actual log file for tests
         actual_log = log_file
         config = get_distro_config()
         if config and ('test' in command):
@@ -142,7 +151,6 @@ def run_make_command(command, job_id):
                 actual_log = get_test_log_file(test_name, distro)
 
         with job_lock:
-            # Check if job was killed
             if exit_code == -9 or exit_code == -15:
                 jobs[job_id]['status'] = 'killed'
             else:
@@ -157,7 +165,6 @@ def run_make_command(command, job_id):
             jobs[job_id]['status'] = 'failed'
             jobs[job_id]['error'] = str(e)
             jobs[job_id]['end_time'] = datetime.now().isoformat()
-            # Remove process from tracking on error
             if job_id in job_processes:
                 del job_processes[job_id]
 
@@ -268,12 +275,10 @@ def set_config():
         return jsonify({'error': 'Invalid distribution'}), 400
 
     try:
-        # Save distro config
         with open(os.path.join(PROJECT_ROOT, '.distro_config'), 'w') as f:
             f.write(f'DISTRO={distro}\n')
             f.write(f'DISTRO_DIR={distro}\n')
 
-        # Save detailed config
         config_file = os.path.join(PROJECT_ROOT, distro, '.configure')
         with open(config_file, 'w') as f:
             f.write(f'# {distro} Configuration\n')
@@ -295,7 +300,6 @@ def set_config():
             f.write('# Test Configuration\n')
             f.write('RUN_TESTS="yes"\n')
 
-            # Enable all tests
             if distro == 'anolis':
                 for test in ['CHECK_KCONFIG', 'BUILD_ALLYES', 'BUILD_ALLNO', 'BUILD_DEFCONFIG',
                             'BUILD_DEBUG', 'RPM_BUILD', 'CHECK_KAPI', 'BOOT_KERNEL']:
@@ -352,7 +356,6 @@ def list_tests():
 @app.route('/api/build', methods=['POST'])
 def build():
     """Run make build"""
-    # Clone Torvalds repo silently before build
     clone_torvalds_repo_silent()
     
     job_id = str(uuid.uuid4())
@@ -440,7 +443,6 @@ def reset():
     thread.start()
     return jsonify({'job_id': job_id})
 
-# NEW: Kill/Stop endpoint
 @app.route('/api/jobs/<job_id>/kill', methods=['POST'])
 def kill_job(job_id):
     """Kill a running job"""
@@ -457,10 +459,8 @@ def kill_job(job_id):
         process = job_processes[job_id]
     
     try:
-        # Kill the entire process group
         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
         
-        # Update job status
         with job_lock:
             jobs[job_id]['status'] = 'killed'
             jobs[job_id]['end_time'] = datetime.now().isoformat()
@@ -487,7 +487,7 @@ def get_job(job_id):
 
 @app.route('/api/jobs/<job_id>/log')
 def get_job_log(job_id):
-    """Get job log"""
+    """Get job log with ANSI codes removed"""
     with job_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
@@ -495,7 +495,6 @@ def get_job_log(job_id):
         job = jobs[job_id]
         log_file = job.get('log_file')
 
-        # Try to get test-specific log
         if not log_file or not os.path.exists(log_file):
             test_name = job.get('test_name')
             if test_name:
@@ -504,18 +503,23 @@ def get_job_log(job_id):
                     distro = config.get('DISTRO')
                     log_file = get_test_log_file(test_name, distro)
 
-        # Read log file
+        # Read and clean log file
         if log_file and os.path.exists(log_file):
             try:
                 with open(log_file, 'r') as f:
-                    return jsonify({'log': f.read()})
+                    raw_log = f.read()
+                    # Clean ANSI codes before returning
+                    clean_log = clean_ansi_codes(raw_log)
+                    return jsonify({'log': clean_log})
             except Exception as e:
                 return jsonify({'error': f'Read error: {str(e)}'}), 500
 
         # Fallback to command output
         output = job.get('output', '')
         if output:
-            return jsonify({'log': output})
+            # Clean ANSI codes from output too
+            clean_output = clean_ansi_codes(output)
+            return jsonify({'log': clean_output})
 
         return jsonify({'error': 'No log available'}), 404
 

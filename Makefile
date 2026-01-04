@@ -4,15 +4,40 @@
 
 SHELL := /bin/bash
 .ONESHELL:
-.PHONY: help config build test list-tests anolis-test euler-test clean reset distclean update-tests update
+
+ifneq ($(euler-test),)
+.PHONY: euler-test
+euler-test:
+	@if [ ! -f "euler/.configure" ]; then \
+		echo -e "\033[0;31mError: openEuler not configured. Run 'make config' first.\033[0m"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "euler/test.sh" ]; then \
+		echo -e "\033[0;31mError: Test script not found: euler/test.sh\033[0m"; \
+		exit 1; \
+	fi; \
+	bash euler/test.sh $(euler-test)
+endif
+
+ifneq ($(anolis-test),)
+.PHONY: anolis-test
+anolis-test:
+	@if [ ! -f "anolis/.configure" ]; then \
+		echo -e "\033[0;31mError: OpenAnolis not configured. Run 'make config' first.\033[0m"; \
+		exit 1; \
+	fi; \
+	if [ ! -f "anolis/test.sh" ]; then \
+		echo -e "\033[0;31mError: Test script not found: anolis/test.sh\033[0m"; \
+		exit 1; \
+	fi; \
+	bash anolis/test.sh $(anolis-test)
+endif
+
+.PHONY: help config build test list-tests clean reset distclean update-tests update
 
 # Always update repo before any target
 update:
 	@git pull --rebase >/dev/null 2>&1 || true
-
-# Make every target depend on update
-MAKECMDGOALS ?= help
-$(MAKECMDGOALS): update
 
 # Configuration files (stored in main directory)
 DISTRO_CONFIG := .distro_config
@@ -77,7 +102,7 @@ help:
 	@echo ""
 
 # Configuration
-config:
+config: update
 	@DETECTED=$$($(MAKE) -s detect_distro); \
 	echo ""; \
 	echo "╔══════════════════════════╗"; \
@@ -113,7 +138,7 @@ config:
 	bash $$DISTRO_DIR/configure.sh
 
 # Update test configuration only
-update-tests: validate
+update-tests: validate update
 	@. $(DISTRO_CONFIG); \
 	if [ ! -f "$$DISTRO_DIR/configure.sh" ]; then \
 		echo -e "$(RED)Error: Configuration script not found: $$DISTRO_DIR/configure.sh$(NC)"; \
@@ -123,49 +148,13 @@ update-tests: validate
 	bash $$DISTRO_DIR/configure.sh --tests
 
 # List available tests for configured distro
-list-tests: validate
+list-tests: validate update
 	@. $(DISTRO_CONFIG); \
 	if [ ! -f "$$DISTRO_DIR/test.sh" ]; then \
 		echo -e "$(RED)No test script found: $$DISTRO_DIR/test.sh$(NC)"; \
 		exit 1; \
 	fi; \
 	bash $$DISTRO_DIR/test.sh list
-
-# Run specific OpenAnolis test
-anolis-test:
-	@if [ -z "$(anolis-test)" ]; then \
-		echo -e "$(RED)Error: No test specified$(NC)"; \
-		echo "Usage: make anolis-test=<test_name>"; \
-		echo "Run 'make list-tests' for detailed information"; \
-		exit 1; \
-	fi; \
-	if [ ! -f "anolis/.configure" ]; then \
-		echo -e "$(RED)Error: OpenAnolis not configured. Run 'make config' first.$(NC)"; \
-		exit 1; \
-	fi; \
-	if [ ! -f "anolis/test.sh" ]; then \
-		echo -e "$(RED)Error: Test script not found: anolis/test.sh$(NC)"; \
-		exit 1; \
-	fi; \
-	bash anolis/test.sh $(anolis-test)
-
-# Run specific openEuler test
-euler-test:
-	@if [ -z "$(euler-test)" ]; then \
-		echo -e "$(RED)Error: No test specified$(NC)"; \
-		echo "Usage: make euler-test=<test_name>"; \
-		echo "Run 'make list-tests' for detailed information"; \
-		exit 1; \
-	fi; \
-	if [ ! -f "euler/.configure" ]; then \
-		echo -e "$(RED)Error: openEuler not configured. Run 'make config' first.$(NC)"; \
-		exit 1; \
-	fi; \
-	if [ ! -f "euler/test.sh" ]; then \
-		echo -e "$(RED)Error: Test script not found: euler/test.sh$(NC)"; \
-		exit 1; \
-	fi; \
-	bash euler/test.sh $(euler-test)
 
 # Validate configuration exists
 validate:
@@ -175,7 +164,7 @@ validate:
 	fi
 
 # Build (default target)
-build: validate
+build: validate update
 	@. $(DISTRO_CONFIG); \
 	if [ ! -f "$$DISTRO_DIR/build.sh" ]; then \
 		echo -e "$(RED)Error: Build script not found: $$DISTRO_DIR/build.sh$(NC)"; \
@@ -185,7 +174,7 @@ build: validate
 	bash $$DISTRO_DIR/build.sh
 
 # Test
-test: validate
+test: validate update
 	@. $(DISTRO_CONFIG); \
 	if [ ! -f "$$DISTRO_DIR/test.sh" ]; then \
 		echo -e "$(YELLOW)No test script found: $$DISTRO_DIR/test.sh$(NC)"; \

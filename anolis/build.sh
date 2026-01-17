@@ -165,9 +165,87 @@ git config user.email "${SIGNER_EMAIL}"
 run_anolis_build() {
   local repo_dir="$1"
   local logpath="$2"
-  echo "OpenAnolis Build log for ${logpath}" > "${logpath}"
-  ( cd "${repo_dir}" && bash -lc "make clean && make anolis_defconfig && make -j${BUILD_THREADS} -s && make modules -j${BUILD_THREADS} -s" ) >> "${logpath}" 2>&1
-  return $?
+  local original_dir="$(pwd)"
+  local result=0
+
+  # Create log file immediately
+  {
+    echo "OpenAnolis Build Log"
+    echo "===================="
+    echo "Started: $(date)"
+    echo "Repository: ${repo_dir}"
+    echo "Log path: ${logpath}"
+    echo "Build threads: ${BUILD_THREADS}"
+    echo ""
+  } > "${logpath}" 2>&1 || {
+    echo -e "${RED}ERROR: Cannot create log file: ${logpath}${NC}" >&2
+    return 1
+  }
+
+  # Verify repository exists
+  if [ ! -d "${repo_dir}" ]; then
+    echo "ERROR: Directory not found: ${repo_dir}" | tee -a "${logpath}" >&2
+    return 1
+  fi
+
+  # Change to repository directory
+  if ! cd "${repo_dir}"; then
+    echo "ERROR: Cannot cd to ${repo_dir}" | tee -a "${logpath}" >&2
+    cd "${original_dir}"
+    return 1
+  fi
+
+  echo "Working directory: $(pwd)" >> "${logpath}" 2>&1
+
+  # Verify Makefile exists
+  if [ ! -f "Makefile" ]; then
+    echo "ERROR: No Makefile found in $(pwd)" | tee -a "${logpath}" >&2
+    cd "${original_dir}"
+    return 1
+  fi
+
+  # Clean
+  echo "=== Running make clean ===" >> "${logpath}" 2>&1
+  if ! make clean >> "${logpath}" 2>&1; then
+    echo "ERROR: make clean failed" | tee -a "${logpath}" >&2
+    result=1
+  fi
+
+  # Configure
+  if [ $result -eq 0 ]; then
+    echo "=== Configuring kernel ===" >> "${logpath}" 2>&1
+    if make anolis_defconfig >> "${logpath}" 2>&1; then
+      echo "Configuration: anolis_defconfig" >> "${logpath}" 2>&1
+    elif make defconfig >> "${logpath}" 2>&1; then
+      echo "Configuration: defconfig (anolis_defconfig not found)" >> "${logpath}" 2>&1
+    else
+      echo "ERROR: Configuration failed" | tee -a "${logpath}" >&2
+      result=1
+    fi
+  fi
+
+  # Build kernel (includes modules automatically)
+  if [ $result -eq 0 ]; then
+    echo "=== Building kernel and modules ===" >> "${logpath}" 2>&1
+    if ! make -j"${BUILD_THREADS}" >> "${logpath}" 2>&1; then
+      echo "ERROR: Build failed" | tee -a "${logpath}" >&2
+      result=1
+    fi
+  fi
+
+  # Return to original directory
+  cd "${original_dir}"
+
+  # Report results
+  if [ $result -ne 0 ]; then
+    echo "Build failed - see log for details" >> "${logpath}" 2>&1
+    echo -e "${RED}=== Last 50 lines of build log ===${NC}" >&2
+    tail -50 "${logpath}" >&2
+  else
+    echo "Build completed successfully at $(date)" >> "${logpath}" 2>&1
+  fi
+
+  return $result
 }
 
 # Collect patch filenames in lexical order
@@ -245,11 +323,11 @@ for pf in "${PATCH_LIST[@]}"; do
     ignore_str=$(IFS=, ; echo "${IGNORES_FOR_MAIN[*]}")
 
     # Run checkpatch and capture output
-    checkpatch_output=$("${CHECKPATCH}" --show-types --no-tree --ignore "${ignore_str}" "${pf}" 2>&1)
+    checkpatch_output=$("${CHECKPATCH}" --show-types --no-tree --ignore "${ignore_str}" "${pf}" 2>&1 || true)
     echo "${checkpatch_output}" > "${checkpatch_output_log}"
 
     # Filter out specific error
-    filtered_output=$(echo "${checkpatch_output}" | grep -v "ERROR: Please use git commit description style")
+    filtered_output=$(echo "${checkpatch_output}" | grep -v "ERROR: Please use git commit description style" || true)
 
     # Count errors
     errors=$(echo "${filtered_output}" | grep -c "^ERROR:" || true)
@@ -268,6 +346,8 @@ for pf in "${PATCH_LIST[@]}"; do
         echo -e "  Checkpatch : ${GREEN}✓ PASS${NC}"
       fi
     fi
+  else
+    echo -e "  Checkpatch : ${YELLOW}⊘ SKIP${NC} (checkpatch.pl not found)"
   fi
 
   # Build patch

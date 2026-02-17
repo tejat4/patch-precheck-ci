@@ -1,6 +1,0 @@
-Version: 1.0
-File: include/uapi/asm-generic/int-ll64.h:26
-Symbol:
-Byte size 4
-typedef __s32
-"int"

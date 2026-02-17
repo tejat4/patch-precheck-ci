@@ -1,3 +1,0 @@
-Version: 1.0
-Symbol:
-assembly sched_numa_hop_mask

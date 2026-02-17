@@ -1,7 +1,0 @@
-Version: 1.0
-File: mm/percpu.c:2256
-Symbol:
-func free_percpu (
-ptr * "void"
-)
-"void"

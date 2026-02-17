@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/kthread.c:654
-Symbol:
-func kthread_park (
-k * @"struct--task_struct.txt"
-)
-"int"

@@ -1,4 +1,0 @@
-Version: 1.0
-File: kernel/pid.c:75
-Symbol:
-var init_pid_ns "void"

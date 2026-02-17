@@ -1,7 +1,0 @@
-Version: 1.0
-File: mm/migrate_device.c:799
-Symbol:
-func migrate_vma_pages (
-migrate * @"struct--migrate_vma.txt"
-)
-"void"

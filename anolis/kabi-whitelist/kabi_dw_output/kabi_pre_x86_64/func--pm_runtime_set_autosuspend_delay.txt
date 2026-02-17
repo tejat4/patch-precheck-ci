@@ -1,8 +1,0 @@
-Version: 1.0
-File: drivers/base/power/runtime.c:1674
-Symbol:
-func pm_runtime_set_autosuspend_delay (
-dev * @"struct--device.txt"
-delay "int"
-)
-"void"

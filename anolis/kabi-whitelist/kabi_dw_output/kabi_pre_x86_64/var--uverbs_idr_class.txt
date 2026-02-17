@@ -1,4 +1,0 @@
-Version: 1.0
-File: drivers/infiniband/core/rdma_core.c:792
-Symbol:
-var uverbs_idr_class "void"

@@ -1,6 +1,0 @@
-Version: 1.0
-File: mm/shrinker.c:1037
-Symbol:
-func synchronize_shrinkers (
-)
-"void"

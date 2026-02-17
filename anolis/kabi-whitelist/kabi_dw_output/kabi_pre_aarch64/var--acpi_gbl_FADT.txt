@@ -1,4 +1,0 @@
-Version: 1.0
-File: include/acpi/acpixf.h:266
-Symbol:
-var acpi_gbl_FADT "void"

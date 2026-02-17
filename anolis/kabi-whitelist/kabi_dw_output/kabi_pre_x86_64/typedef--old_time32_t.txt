@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/vdso/time32.h:5
-Symbol:
-typedef old_time32_t
-@"typedef--s32.txt"

@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/uapi/linux/types.h:36
-Symbol:
-typedef __le16
-@"typedef--__u16.txt"

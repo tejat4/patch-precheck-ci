@@ -1,7 +1,0 @@
-Version: 1.0
-File: mm/shrinker.c:1027
-Symbol:
-func unregister_shrinker (
-shrinker * @"struct--shrinker.txt"
-)
-"void"

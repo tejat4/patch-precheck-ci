@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/fork.c:1025
-Symbol:
-func __put_task_struct (
-tsk * @"struct--task_struct.txt"
-)
-"void"

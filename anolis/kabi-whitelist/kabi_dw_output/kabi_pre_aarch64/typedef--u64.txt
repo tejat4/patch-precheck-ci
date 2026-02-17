@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/asm-generic/int-ll64.h:23
-Symbol:
-typedef u64
-@"typedef--__u64.txt"

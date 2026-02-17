@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/linux/cpumask.h:19
-Symbol:
-typedef cpumask_t
-@"struct--cpumask.txt"

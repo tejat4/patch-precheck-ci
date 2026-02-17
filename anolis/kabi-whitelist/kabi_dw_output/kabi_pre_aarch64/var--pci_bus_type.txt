@@ -1,4 +1,0 @@
-Version: 1.0
-File: drivers/pci/pci-driver.c:1690
-Symbol:
-var pci_bus_type "void"

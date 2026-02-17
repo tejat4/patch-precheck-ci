@@ -1,7 +1,0 @@
-Version: 1.0
-File: drivers/video/backlight/backlight.c:520
-Symbol:
-func backlight_device_unregister (
-bd * @"struct--backlight_device.txt"
-)
-"void"

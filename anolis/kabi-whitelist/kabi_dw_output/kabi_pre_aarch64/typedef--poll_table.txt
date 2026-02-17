@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/linux/poll.h:40
-Symbol:
-typedef poll_table
-@"struct--poll_table_struct.txt"

@@ -1,0 +1,6 @@
+[submodule "anolis/kabi-dw"]
+	path = anolis/kabi-dw
+	url = https://gitee.com/anolis/kabi-dw.git
+[submodule "anolis/kabi-whitelist"]
+	path = anolis/kabi-whitelist
+	url = https://gitee.com/anolis/kabi-whitelist.git

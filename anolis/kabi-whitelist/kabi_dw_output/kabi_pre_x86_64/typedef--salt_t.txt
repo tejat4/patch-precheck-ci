@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/net/macsec.h:45
-Symbol:
-typedef salt_t
-@"union--salt.txt"

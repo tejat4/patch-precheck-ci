@@ -1,7 +1,0 @@
-Version: 1.0
-File: mm/util.c:675
-Symbol:
-func kvfree (
-addr * const "void"
-)
-"void"

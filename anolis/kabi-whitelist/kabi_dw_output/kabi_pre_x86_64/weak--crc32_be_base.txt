@@ -1,3 +1,0 @@
-Version: 1.0
-Symbol:
-weak crc32_be_base -> crc32_be

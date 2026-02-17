@@ -1,8 +1,0 @@
-Version: 1.0
-File: lib/string.c:283
-Symbol:
-func strcmp (
-cs * const "char"
-ct * const "char"
-)
-"int"

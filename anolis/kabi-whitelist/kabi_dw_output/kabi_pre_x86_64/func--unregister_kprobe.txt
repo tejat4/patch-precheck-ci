@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/kprobes.c:1852
-Symbol:
-func unregister_kprobe (
-p * @"struct--kprobe.txt"
-)
-"void"

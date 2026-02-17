@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/locking/semaphore.c:184
-Symbol:
-func up (
-sem * @"struct--semaphore.txt"
-)
-"void"

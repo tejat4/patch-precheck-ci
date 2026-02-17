@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/module/main.c:922
-Symbol:
-func module_put (
-module * @"struct--module.txt"
-)
-"void"

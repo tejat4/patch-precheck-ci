@@ -1,3 +1,0 @@
-Version: 1.0
-Symbol:
-assembly remove_wait_queue

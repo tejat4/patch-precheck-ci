@@ -1,3 +1,0 @@
-Version: 1.0
-Symbol:
-assembly init_wait_entry

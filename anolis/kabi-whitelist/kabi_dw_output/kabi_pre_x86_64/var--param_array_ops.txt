@@ -1,4 +1,0 @@
-Version: 1.0
-File: kernel/params.c:504
-Symbol:
-var param_array_ops "void"

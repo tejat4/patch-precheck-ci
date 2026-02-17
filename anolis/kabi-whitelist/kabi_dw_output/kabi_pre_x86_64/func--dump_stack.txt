@@ -1,6 +1,0 @@
-Version: 1.0
-File: lib/dump_stack.c:112
-Symbol:
-func dump_stack (
-)
-"void"

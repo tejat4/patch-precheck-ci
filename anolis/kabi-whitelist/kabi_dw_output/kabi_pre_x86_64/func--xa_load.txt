@@ -1,8 +1,0 @@
-Version: 1.0
-File: lib/xarray.c:1454
-Symbol:
-func xa_load (
-xa * @"struct--xarray.txt"
-index "long unsigned int"
-)
-* "void"

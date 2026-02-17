@@ -1,6 +1,0 @@
-Version: 1.0
-File: kernel/power/main.c:85
-Symbol:
-func ksys_sync_helper (
-)
-"void"

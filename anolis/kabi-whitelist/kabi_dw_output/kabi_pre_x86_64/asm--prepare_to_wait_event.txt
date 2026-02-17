@@ -1,3 +1,0 @@
-Version: 1.0
-Symbol:
-assembly prepare_to_wait_event

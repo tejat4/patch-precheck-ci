@@ -1,6 +1,0 @@
-Version: 1.0
-File: kernel/kthread.c:178
-Symbol:
-func kthread_should_park (
-)
-@"typedef--bool.txt"

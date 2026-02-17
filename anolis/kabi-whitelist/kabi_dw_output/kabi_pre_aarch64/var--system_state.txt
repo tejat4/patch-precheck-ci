@@ -1,4 +1,0 @@
-Version: 1.0
-File: init/main.c:126
-Symbol:
-var system_state "void"

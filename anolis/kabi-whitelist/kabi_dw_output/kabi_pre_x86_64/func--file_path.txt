@@ -1,9 +1,0 @@
-Version: 1.0
-File: fs/open.c:1053
-Symbol:
-func file_path (
-filp * @"struct--file.txt"
-buf * "char"
-buflen "int"
-)
-* "char"

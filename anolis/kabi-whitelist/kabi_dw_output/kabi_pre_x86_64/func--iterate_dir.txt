@@ -1,8 +1,0 @@
-Version: 1.0
-File: fs/readdir.c:87
-Symbol:
-func iterate_dir (
-file * @"struct--file.txt"
-ctx * @"struct--dir_context.txt"
-)
-"int"

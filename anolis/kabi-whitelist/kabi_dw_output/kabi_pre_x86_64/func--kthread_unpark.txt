@@ -1,7 +1,0 @@
-Version: 1.0
-File: kernel/kthread.c:621
-Symbol:
-func kthread_unpark (
-k * @"struct--task_struct.txt"
-)
-"void"

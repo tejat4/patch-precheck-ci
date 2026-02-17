@@ -1,6 +1,0 @@
-Version: 1.0
-File: include/uapi/asm-generic/termbits-common.h:6
-Symbol:
-Byte size 4
-typedef speed_t
-"unsigned int"

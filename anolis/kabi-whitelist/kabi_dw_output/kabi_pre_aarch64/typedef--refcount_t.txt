@@ -1,5 +1,0 @@
-Version: 1.0
-File: include/linux/refcount.h:113
-Symbol:
-typedef refcount_t
-@"struct--refcount_struct.txt"

@@ -1,9 +1,22 @@
+<!--
+  SPDX-License-Identifier: GPL-3.0-only
+
+  Pre-PR CI - web/templates/index.html
+  Single-page web UI — Vue.js frontend for triggering and monitoring CI jobs
+
+  Copyright (C) 2025 Advanced Micro Devices, Inc.
+  Author: Hemanth Selam <Hemanth.Selam@amd.com>
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, version 3.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patch Pre-Check CI Tool</title>
+    <title>Pre-PR CI</title>
     <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -308,7 +321,7 @@
         <!-- Header -->
         <div class="header">
             <div class="header-content">
-                <img src="/static/logo-horizontal.svg" alt="Patch Pre-Check CI Tool" height="120" style="margin-right:20px;">
+                <img src="/static/logo-horizontal.svg" alt="Pre-PR CI" height="120" style="margin-right:20px;">
                 <div class="status-info">
                     <span class="status-badge" :class="systemStatus.configured ? 'configured' : 'not-configured'">
                         <i :class="systemStatus.configured ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
@@ -474,7 +487,7 @@
         <div class="footer">
             <div class="footer-content">
                 <div class="footer-left">
-                    <p class="footer-title">Patch Pre-Check CI Tool</p>
+                    <p class="footer-title">Pre-PR CI</p>
                     <p class="footer-subtitle">Automated kernel patch validation and testing</p>
                 </div>
                 <div class="footer-center">

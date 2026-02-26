@@ -1,4 +1,4 @@
-# Patch Pre-Check CI - Web Interface
+# Pre-PR CI - Web Interface
 
 ## Files in this directory
 

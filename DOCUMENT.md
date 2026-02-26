@@ -1,8 +1,8 @@
-# Patch Pre-Check CI Tool Documentation
+# Pre-PR CI Documentation
 
 ## Overview
 
-The Patch Pre-Check CI Tool is an automated testing framework designed to validate Linux kernel patches across different distributions before submission. It streamlines patch validation by automating patch application, kernel builds, distribution-specific testing, and provides both command-line and web-based interfaces for enhanced usability.
+The Pre-PR CI is an automated testing framework designed to validate Linux kernel patches across different distributions before submission. It streamlines patch validation by automating patch application, kernel builds, distribution-specific testing, and provides both command-line and web-based interfaces for enhanced usability.
 
 ## Features
 
@@ -54,8 +54,8 @@ pip3 install Flask Flask-CORS Werkzeug --user
 #### Command Line Interface
 
 ```bash
-git clone https://github.com/SelamHemanth/patch-precheck-ci.git
-cd patch-precheck-ci
+git clone https://github.com/SelamHemanth/pre-pr-ci.git
+cd pre-pr-ci
 
 make config # Run config wizard
 make build # Build/test patches
@@ -65,7 +65,7 @@ make test # Execute all tests
 #### Web Interface
 
 ```bash
-cd patch-precheck-ci/web
+cd pre-pr-ci/web
 ./start.sh
 # Access at: http://your-server-ip:5000
 ```
@@ -176,7 +176,7 @@ cd patch-precheck-ci/web
 
 ### Overview
 
-The web interface provides a modern, graphical dashboard for interacting with the Patch Pre-Check CI Tool without using the command line.
+The web interface provides a modern, graphical dashboard for interacting with the Pre-PR CI without using the command line.
 
 ### Features
 
@@ -390,14 +390,14 @@ The web interface can be deployed as a systemd service for production environmen
 
 ```bash
 # Navigate to project root
-cd /path/to/patch-precheck-ci
+cd /path/to/pre-pre-ci
 
 # Install systemd service
 sudo ./service.sh install
 ```
 
 **What it does:**
-1. Creates systemd service file at `/etc/systemd/system/patch-precheck-ci-web.service`
+1. Creates systemd service file at `/etc/systemd/system/pre-pr-ci-web.service`
 2. Detects current user and configures service to run as that user
 3. Sets working directory to project root
 4. Configures auto-restart on failure
@@ -406,13 +406,13 @@ sudo ./service.sh install
 
 **Output:**
 ```
-╔══════════════════════════════════════════╗
-║  Patch Pre-Check CI Web Service Manager  ║
-╚══════════════════════════════════════════╝
+╔═════════════════════════════════╗
+║  Pre-PR CI Web Service Manager  ║
+╚═════════════════════════════════╝
 
-ℹ Installing Patch Pre-Check CI Web Service...
+ℹ Installing Pre-PR CI Web Service...
 
-✓ Service file created: /etc/systemd/system/patch-precheck-ci-web.service
+✓ Service file created: /etc/systemd/system/pre-pr-ci-web.service
 ✓ Systemd reloaded
 ✓ Service enabled (will start on boot)
 
@@ -472,19 +472,19 @@ Shows detailed service information:
 
 **Example Output:**
 ```
-╔══════════════════════════════════════════╗
-║  Patch Pre-Check CI Web Service Manager  ║
-╚══════════════════════════════════════════╝
+╔═════════════════════════════════╗
+║  Pre-PR CI Web Service Manager  ║
+╚═════════════════════════════════╝
 
-● patch-precheck-ci-web.service - Patch Pre-Check CI Web Interface
-     Loaded: loaded (/etc/systemd/system/patch-precheck-ci-web.service; enabled)
+● pre-pr-ci-web.service - Pre-PR CI Web Interface
+     Loaded: loaded (/etc/systemd/system/pre-pr-ci-web.service; enabled)
      Active: active (running) since Sun 2025-12-29 10:00:00 UTC; 2h 15min ago
    Main PID: 12345 (python3)
       Tasks: 3 (limit: 4915)
      Memory: 45.2M
         CPU: 1.234s
-     CGroup: /system.slice/patch-precheck-ci-web.service
-             └─12345 /usr/bin/python3 /path/to/patch-precheck-ci/web/server.py
+     CGroup: /system.slice/pre-pr-ci-web.service
+             └─12345 /usr/bin/python3 /path/to/pre-pr-ci/web/server.py
 
 ════════════════════════════════════════════════
 
@@ -524,22 +524,22 @@ Using `journalctl` directly:
 
 ```bash
 # Last 100 lines
-sudo journalctl -u patch-precheck-ci-web -n 100
+sudo journalctl -u pre-pr-ci-web -n 100
 
 # All logs from today
-sudo journalctl -u patch-precheck-ci-web --since today
+sudo journalctl -u pre-pr-ci-web --since today
 
 # Last hour
-sudo journalctl -u patch-precheck-ci-web --since "1 hour ago"
+sudo journalctl -u pre-pr-ci-web --since "1 hour ago"
 
 # Between specific times
-sudo journalctl -u patch-precheck-ci-web --since "2025-12-29 10:00:00" --until "2025-12-29 12:00:00"
+sudo journalctl -u pre-pr-ci-web --since "2025-12-29 10:00:00" --until "2025-12-29 12:00:00"
 
 # Follow with filters
-sudo journalctl -u patch-precheck-ci-web -f | grep ERROR
+sudo journalctl -u pre-pr-ci-web -f | grep ERROR
 
 # Export to file
-sudo journalctl -u patch-precheck-ci-web > service_logs.txt
+sudo journalctl -u pre-pr-ci-web > service_logs.txt
 ```
 
 ### Uninstallation
@@ -561,28 +561,28 @@ Removes the service:
 #### Service File Location
 
 ```
-/etc/systemd/system/patch-precheck-ci-web.service
+/etc/systemd/system/pre-pr-ci-web.service
 ```
 
 #### Default Configuration
 
 ```systemd
 [Unit]
-Description=Patch Pre-Check CI Web Interface
+Description=Pre-PR CI Web Interface
 After=network.target
 
 [Service]
 Type=simple
 User=amd
-WorkingDirectory=/home/amd/patch-precheck-ci
-ExecStart=/usr/bin/python3 /home/amd/patch-precheck-ci/web/server.py
+WorkingDirectory=/home/amd/pre-pr-ci
+ExecStart=/usr/bin/python3 /home/amd/pre-pr-ci/web/server.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
 
 Environment="PATH=/home/amd/.local/bin:/usr/local/bin:/usr/bin:/bin"
-Environment="PYTHONPATH=/home/amd/patch-precheck-ci"
+Environment="PYTHONPATH=/home/amd/pre-pr-ci"
 
 NoNewPrivileges=true
 PrivateTmp=true
@@ -683,7 +683,7 @@ sudo ./service.sh logs-tail
    **Solution:**
    ```bash
    # Fix ownership
-   sudo chown -R $USER:$USER /path/to/patch-precheck-ci
+   sudo chown -R $USER:$USER /path/to/pre-pr-ci
 
    # Reinstall service
    sudo ./service.sh uninstall
@@ -748,47 +748,47 @@ The service integrates with standard systemctl commands:
 
 ```bash
 # Start/stop/restart
-sudo systemctl start patch-precheck-ci-web
-sudo systemctl stop patch-precheck-ci-web
-sudo systemctl restart patch-precheck-ci-web
+sudo systemctl start pre-pr-ci-web
+sudo systemctl stop pre-pr-ci-web
+sudo systemctl restart pre-pr-ci-web
 
 # Status
-sudo systemctl status patch-precheck-ci-web
+sudo systemctl status pre-pr-ci-web
 
 # Enable/disable auto-start
-sudo systemctl enable patch-precheck-ci-web
-sudo systemctl disable patch-precheck-ci-web
+sudo systemctl enable pre-pr-ci-web
+sudo systemctl disable pre-pr-ci-web
 
 # Reload configuration
 sudo systemctl daemon-reload
 
 # View service file
-sudo systemctl cat patch-precheck-ci-web
+sudo systemctl cat pre-pr-ci-web
 ```
 
 #### Monitoring with systemd
 
 ```bash
 # Show all properties
-systemctl show patch-precheck-ci-web
+systemctl show pre-pr-ci-web
 
 # Specific properties
-systemctl show patch-precheck-ci-web -p ActiveState
-systemctl show patch-precheck-ci-web -p MainPID
-systemctl show patch-precheck-ci-web -p MemoryCurrent
+systemctl show pre-pr-ci-web -p ActiveState
+systemctl show pre-pr-ci-web -p MainPID
+systemctl show pre-pr-ci-web -p MemoryCurrent
 ```
 
 #### Boot-time Behavior
 
 ```bash
 # Check if enabled
-systemctl is-enabled patch-precheck-ci-web
+systemctl is-enabled pre-pr-ci-web
 
 # Check boot timing
-systemd-analyze blame | grep patch-precheck
+systemd-analyze blame | grep pre-pr-ci
 
 # View startup order
-systemd-analyze critical-chain patch-precheck-ci-web.service
+systemd-analyze critical-chain pre-pr-ci-web.service
 ```
 
 ### Deployment Workflows
@@ -841,10 +841,10 @@ sudo ./service.sh logs-tail
 
 ```bash
 # Backup service configuration
-sudo cp /etc/systemd/system/patch-precheck-ci-web.service /path/to/backup/
+sudo cp /etc/systemd/system/pre-pr-ci-web.service /path/to/backup/
 
 # Restore
-sudo cp /path/to/backup/patch-precheck-ci-web.service /etc/systemd/system/
+sudo cp /path/to/backup/pre-pr-ci-web.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo ./service.sh start
 ```
@@ -856,7 +856,7 @@ sudo ./service.sh start
 Edit service file to add limits:
 
 ```bash
-sudo systemctl edit patch-precheck-ci-web --full
+sudo systemctl edit pre-pr-ci-web --full
 ```
 
 Add under `[Service]`:
@@ -887,7 +887,7 @@ The service includes basic security settings:
 For additional hardening, edit service file:
 
 ```bash
-sudo systemctl edit patch-precheck-ci-web --full
+sudo systemctl edit pre-pr-ci-web --full
 ```
 
 Add under `[Service]`:
@@ -895,7 +895,7 @@ Add under `[Service]`:
 # Filesystem protection
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/path/to/patch-precheck-ci/logs
+ReadWritePaths=/path/to/pre-pr-ci/logs
 
 # Network restrictions (if only local access needed)
 RestrictAddressFamilies=AF_INET AF_INET6
@@ -930,7 +930,7 @@ sudo ./service.sh status
 sudo ./service.sh stop
 
 # 2. Optionally disable auto-start
-sudo systemctl disable patch-precheck-ci-web
+sudo systemctl disable pre-pr-ci-web
 
 # 3. Start manually
 cd web
@@ -986,7 +986,7 @@ This tool is provided as-is for kernel development and testing purposes.
 
 ## Support
 
-- [Repository](https://github.com/SelamHemanth/patch-precheck-ci)
+- [Repository](https://github.com/SelamHemanth/pre-pr-ci)
 - Issues via GitHub
 
 ---

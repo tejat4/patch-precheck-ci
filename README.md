@@ -1,4 +1,4 @@
-# <img src="web/static/logo.svg" alt="Patch Pre-Check Logo" height="40" /> Patch Pre-Check CI Tool
+# <img src="web/static/logo.svg" alt="Pre-PR CI Logo" height="40" /> Pre-PR CI
 
 This tool automates distribution detection, configuration, patch application, and kernel build/test workflows across supported Linux distributions.
 
@@ -7,7 +7,7 @@ This tool automates distribution detection, configuration, patch application, an
 ## ✨ Features
 - Automatic detection of target distribution
 - Distro-specific build scripts
-- Patch management and pre-check CI integration
+- Patch management and Pre-PR CI integration
 - Automated kernel boot testing on remote VMs
 - Password-based authentication for unattended testing
 - Unified interface via `make` targets
@@ -36,14 +36,14 @@ A modern, responsive web interface is available for easier interaction with the 
 
 ## ⚙️ Usage
 
-- Install Prerequisite packages (Check in [DOCUMENT.md](https://github.com/SelamHemanth/patch-precheck-ci/blob/master/DOCUMENT.md))
+- Install Prerequisite packages (Check in [DOCUMENT.md](https://github.com/SelamHemanth/pre-pr-ci/blob/master/DOCUMENT.md))
 
 ```bash
 # Clone repository
-git clone https://github.com/SelamHemanth/patch-precheck-ci.git
+git clone https://github.com/SelamHemanth/pre-pr-ci.git
 
 # Step into investigation
-cd patch-precheck-ci
+cd pre-pr-ci
 ```
 
 ### Command Line Interface
@@ -72,7 +72,7 @@ Run the web interface as a system service:
 
 ## 📖 Documentation
 
-For detailed documentation, please refer to: [DOCUMENT.md](https://github.com/SelamHemanth/patch-precheck-ci/blob/master/DOCUMENT.md)
+For detailed documentation, please refer to: [DOCUMENT.md](https://github.com/SelamHemanth/pre-pr-ci/blob/master/DOCUMENT.md)
 
 ---
 
@@ -90,7 +90,7 @@ Contributions are welcome! To contribute:
 
 ## 📄 License
 
-This project is licensed under the GPL-3.0 License - see the [LICENSE](https://github.com/SelamHemanth/patch-precheck-ci/blob/master/LICENSE) file for details.
+This project is licensed under the GPL-3.0 License - see the [LICENSE](https://github.com/SelamHemanth/pre-pr-ci/blob/master/LICENSE) file for details.
 
 ---
 

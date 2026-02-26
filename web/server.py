@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - web/server.py
+# Flask web server — REST API backend for the Pre-PR CI web interface
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+
 """
-Web Server for Patch Pre-Check CI Tool
-Place this file in: patch-precheck-ci/web/server.py
+Web Server for Pre-PR CI
+Place this file in: pre-pr-ci/web/server.py
 """
 
 import os
@@ -758,8 +771,8 @@ def get_job_log(job_id):
 
 
 if __name__ == '__main__':
-    print("\n╔═══════════════════════════════════╗")
-    print("║   Patch Pre-Check CI Web Server   ║")
-    print("╚═══════════════════════════════════╝\n")
+    print("\n╔══════════════════════════╗")
+    print("║   Pre-PR CI Web Server   ║")
+    print("╚══════════════════════════╝\n")
     print(f"Access at: http://$(hostname -I | awk '{{print $1}}'):5000\n")
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

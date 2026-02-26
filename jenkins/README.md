@@ -1,4 +1,4 @@
-# ⚡ Patch Pre-Check CI Tool ⚡
+# ⚡ Pre-PR CI Tool ⚡
 
 This tool automates distribution detection, configuration, patch application, and kernel build/test workflows across supported Linux distributions.
 
@@ -8,7 +8,7 @@ Follow the instructions below to set up and use the automation scripts.
 
 ## 🔧 Workflow
 
-Copy and paste the ['jenkins_pipeline.groovy'](https://github.com/d-priyankamani/patch-precheck-ci/blob/master/jenkins/jenkins_pipeline.groovy) code into the Jenkins Groovy script console.
+Copy and paste the ['jenkins_pipeline.groovy'](https://github.com/SelamHemanth/pre-pr-ci/blob/master/jenkins/jenkins_pipeline.groovy) code into the Jenkins Groovy script console.
 
 Click Apply and then Save.
 

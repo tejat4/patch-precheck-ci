@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - anolis/checkdepend.py
+# Dependency checker — verify upstream commit dependencies for OpenAnolis patches
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
 """
 checkdepend.py
 

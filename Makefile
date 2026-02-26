@@ -1,4 +1,17 @@
 #!/usr/bin/make -f
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - Makefile
+# Top-level Makefile — entry point for configure, build, test, clean and reset targets
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+
 # Main Makefile - Multi-Distro Kernel Build Tool
 # Manages distro detection and delegates to distro-specific scripts
 
@@ -75,9 +88,9 @@ detect_distro:
 
 # Default help
 help:
-	@echo "╔════════════════════════════════╗"
-	@echo "║     Patch Pre-Check CI Tool    ║"
-	@echo "╚════════════════════════════════╝"
+	@echo "╔═════════════╗"
+	@echo "║  Pre-PR CI  ║"
+	@echo "╚═════════════╝"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make config     - Configure target distribution"

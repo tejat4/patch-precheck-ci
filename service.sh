@@ -1,6 +1,16 @@
 #!/bin/bash
-# service.sh - Service management for Patch Pre-Check CI Web Interface
-# Place this file in: /path/to/patch-precheck-ci/service.sh
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - service.sh
+# Systemd service helper — install/start/stop the Pre-PR CI web server as a system service
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
 
 set -e
 
@@ -8,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 WEB_DIR="$PROJECT_ROOT/web"
 TORVALDS_REPO="${PROJECT_ROOT}/.torvalds-linux"
-SERVICE_NAME="patch-precheck-ci-web"
+SERVICE_NAME="pre-pr-ci-web"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 # Colors
@@ -20,9 +30,9 @@ NC='\033[0m' # No Color
 
 print_header() {
     echo ""
-    echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-    echo -e "${BLUE}║  Patch Pre-Check CI Web Service Manager  ║${NC}"
-    echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+    echo -e "${BLUE}╔═════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║  Pre-PR CI Web Service Manager  ║${NC}"
+    echo -e "${BLUE}╚═════════════════════════════════╝${NC}"
     echo ""
 }
 
@@ -134,7 +144,7 @@ create_service_file() {
     # Create service file
     cat > "$SERVICE_FILE" << EOF
 [Unit]
-Description=Patch Pre-Check CI Web Interface
+Description=Pre-PR CI Web Interface
 After=network.target
 
 [Service]
@@ -192,7 +202,7 @@ install_service() {
     check_root "install"
     
     print_header
-    print_info "Installing Patch Pre-Check CI Web Service..."
+    print_info "Installing Pre-PR CI Web Service..."
     echo ""
     
     # Check files
@@ -232,7 +242,7 @@ uninstall_service() {
     check_root "uninstall"
     
     print_header
-    print_warning "Uninstalling Patch Pre-Check CI Web Service..."
+    print_warning "Uninstalling Pre-PR CI Web Service..."
     echo ""
     
     # Stop service if running
@@ -270,7 +280,7 @@ start_service() {
     check_root "start"
     
     print_header
-    print_info "Starting Patch Pre-Check CI Web Service..."
+    print_info "Starting Pre-PR CI Web Service..."
     echo ""
     
     if ! systemctl is-enabled --quiet "$SERVICE_NAME" 2>/dev/null; then
@@ -311,7 +321,7 @@ stop_service() {
     check_root "stop"
     
     print_header
-    print_info "Stopping Patch Pre-Check CI Web Service..."
+    print_info "Stopping Pre-PR CI Web Service..."
     echo ""
     
     if ! systemctl is-active --quiet "$SERVICE_NAME"; then
@@ -337,7 +347,7 @@ restart_service() {
     check_root "restart"
     
     print_header
-    print_info "Restarting Patch Pre-Check CI Web Service..."
+    print_info "Restarting Pre-PR CI Web Service..."
     echo ""
     
     systemctl restart "$SERVICE_NAME"

@@ -1,12 +1,23 @@
 #!/bin/bash
-# Launcher for Patch Pre-Check CI Web Server
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - web/start.sh
+# Web server startup script — launch the Flask server with the correct environment
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
 
 WEB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$WEB_DIR")"
 
-echo "╔════════════════════════════════════════════════╗"
-echo "║   Starting Patch Pre-Check CI Web Server      ║"
-echo "╚════════════════════════════════════════════════╝"
+echo "╔═════════════════════════════════╗"
+echo "║  Starting Pre-PR CI Web Server  ║"
+echo "╚═════════════════════════════════╝"
 echo ""
 echo "Web Directory: $WEB_DIR"
 echo "Project Root: $PROJECT_ROOT"

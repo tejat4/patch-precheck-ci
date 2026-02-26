@@ -162,7 +162,7 @@ stages {
                     try {
                         echo "============ BUILD START ============="
                         
-                        def buildDir = "${env.WORKSPACE}/patch-precheck-ci"
+                        def buildDir = "${env.WORKSPACE}/pre-pr-ci"
                         
                         if (!fileExists(buildDir)) {
                             error("❌ Build directory not found: ${buildDir}")
@@ -315,10 +315,10 @@ def run_distro_specific_operations(system_distro, d) {
 
 def clone_repository() {
     try {
-        def repoDir = "${env.WORKSPACE}/patch-precheck-ci"
+        def repoDir = "${env.WORKSPACE}/pre-pr-ci"
         
         if (fileExists(repoDir)) {
-            echo "✔ Directory 'patch-precheck-ci' already exists - skipping clone."
+            echo "✔ Directory 'pre-pr-ci' already exists - skipping clone."
             
             // Verify it's a valid git repository
             def isGitRepo = sh(
@@ -347,7 +347,7 @@ def clone_repository() {
             sh """
                 set -e
                 cd "${env.WORKSPACE}"
-                git clone https://github.com/SelamHemanth/patch-precheck-ci.git
+                git clone https://github.com/SelamHemanth/pre-pr-ci.git
             """
             
             // Verify clone was successful
@@ -364,7 +364,7 @@ def clone_repository() {
 
 def clone_torvalds_repo() {
     try {
-        def torvaldsDir = "${env.WORKSPACE}/patch-precheck-ci/.torvalds-linux"
+        def torvaldsDir = "${env.WORKSPACE}/pre-pr-ci/.torvalds-linux"
 
         echo "=========== TORVALDS REPO SETUP START ==========="
 
@@ -374,7 +374,7 @@ def clone_torvalds_repo() {
             sh """
                 set -e
                 rm -rf ${torvaldsDir}
-                cd ${env.WORKSPACE}/patch-precheck-ci
+                cd ${env.WORKSPACE}/pre-pr-ci
                 git clone --bare https://github.com/torvalds/linux.git .torvalds-linux
                 git config --global --add safe.directory ${torvaldsDir}
             """
@@ -385,7 +385,7 @@ def clone_torvalds_repo() {
             echo "→ Cloning linux repository from torvalds into '.torvalds-linux'..."
             sh """
                 set -e
-                cd ${env.WORKSPACE}/patch-precheck-ci
+                cd ${env.WORKSPACE}/pre-pr-ci
                 git clone --bare https://github.com/torvalds/linux.git .torvalds-linux
                 git config --global --add safe.directory ${torvaldsDir}
             """
@@ -448,7 +448,7 @@ def clone_torvalds_repo() {
 
 def create_distro_config(distro) {
     try {
-        def configFile = "${env.WORKSPACE}/patch-precheck-ci/.distro_config"
+        def configFile = "${env.WORKSPACE}/pre-pr-ci/.distro_config"
         def distroDir = (distro == 'openeuler') ? 'euler' : distro
         def distroName = (distro == 'openeuler') ? 'euler' : distro
         
@@ -461,7 +461,7 @@ def create_distro_config(distro) {
         
         // Create configuration file
         sh """
-            cd "${env.WORKSPACE}/patch-precheck-ci"
+            cd "${env.WORKSPACE}/pre-pr-ci"
             cat > .distro_config <<EOF
 DISTRO=${distroName}
 DISTRO_DIR=${distroDir}
@@ -498,7 +498,7 @@ EOF
 
 def anolis_general_configuration() {
     try {
-        def configFile = "${env.WORKSPACE}/patch-precheck-ci/anolis/.configure"
+        def configFile = "${env.WORKSPACE}/pre-pr-ci/anolis/.configure"
         
         echo "Creating Anolis configuration file..."
         
@@ -509,7 +509,7 @@ def anolis_general_configuration() {
         ])
         
         // Check if directory exists
-        def configDir = "${env.WORKSPACE}/patch-precheck-ci/anolis"
+        def configDir = "${env.WORKSPACE}/pre-pr-ci/anolis"
         if (!fileExists(configDir)) {
             error("❌ Anolis directory not found: ${configDir}")
         }
@@ -553,7 +553,7 @@ VM_IP="${params.VM_ip}"
 VM_ROOT_PWD="${params.VM_root_pwd}"
 
 # Repository Configuration
-TORVALDS_REPO="${env.WORKSPACE}/patch-precheck-ci/.torvalds-linux"
+TORVALDS_REPO="${env.WORKSPACE}/pre-pr-ci/.torvalds-linux"
 EOF
         """
         
@@ -569,7 +569,7 @@ EOF
 
 def euler_general_configuration() {
     try {
-        def configFile = "${env.WORKSPACE}/patch-precheck-ci/euler/.configure"
+        def configFile = "${env.WORKSPACE}/pre-pr-ci/euler/.configure"
         
         echo "Creating Euler configuration file..."
         
@@ -581,7 +581,7 @@ def euler_general_configuration() {
         ])
         
         // Check if directory exists
-        def configDir = "${env.WORKSPACE}/patch-precheck-ci/euler"
+        def configDir = "${env.WORKSPACE}/pre-pr-ci/euler"
         if (!fileExists(configDir)) {
             error("❌ Euler directory not found: ${configDir}")
         }
@@ -623,7 +623,7 @@ VM_IP="${params.VM_ip}"
 VM_ROOT_PWD="${params.VM_root_pwd}"
 
 # Repository Configuration
-TORVALDS_REPO="${env.WORKSPACE}/patch-precheck-ci/.torvalds-linux"
+TORVALDS_REPO="${env.WORKSPACE}/pre-pr-ci/.torvalds-linux"
 EOF
         """
         
@@ -747,7 +747,7 @@ def anolis_test_configuration() {
         
         sh """
             set -e
-            cd "${env.WORKSPACE}/patch-precheck-ci"
+            cd "${env.WORKSPACE}/pre-pr-ci"
             ${cmd}
         """
         
@@ -798,7 +798,7 @@ def euler_test_configuration() {
         
         sh """
             set -e
-            cd "${env.WORKSPACE}/patch-precheck-ci"
+            cd "${env.WORKSPACE}/pre-pr-ci"
             ${cmd}
         """
         
@@ -814,7 +814,7 @@ void MyArchive() {
         echo "Starting artifact archival..."
         
         def result_dir = "${env.WORKSPACE}/../result_logs/${JOB_NAME}/${env.BUILD_NUMBER}"
-        def logs_dir = "${env.WORKSPACE}/patch-precheck-ci/logs"
+        def logs_dir = "${env.WORKSPACE}/pre-pr-ci/logs"
         
         echo "Result directory: ${result_dir}"
         echo "Logs directory: ${logs_dir}"

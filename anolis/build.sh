@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Pre-PR CI - anolis/build.sh
+# OpenAnolis build script — apply patches and build the kernel from source
+#
+# Copyright (C) 2025 Advanced Micro Devices, Inc.
+# Author: Hemanth Selam <Hemanth.Selam@amd.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
 set -euo pipefail
 
 # anolis/build.sh - OpenAnolis specific build script

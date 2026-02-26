@@ -5,10 +5,14 @@ Place this file in: patch-precheck-ci/web/server.py
 """
 
 import os
+import shutil
+import stat
 import subprocess
+import sys
 import threading
 import uuid
 import signal
+import json
 import re
 from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
@@ -28,10 +32,44 @@ LOGS_DIR = os.path.join(PROJECT_ROOT, 'logs')
 os.makedirs(LOGS_DIR, exist_ok=True)
 
 TORVALDS_REPO = os.path.join(PROJECT_ROOT, '.torvalds-linux')
+JOBS_FILE     = os.path.join(LOGS_DIR, '.jobs.json')
 
-jobs = {}
-job_lock = threading.Lock()
-job_processes = {}
+job_lock      = threading.Lock()
+job_processes = {}   # pid handles — never persisted
+
+
+def _load_jobs():
+    """Load jobs from disk. Returns a dict keyed by job_id."""
+    try:
+        if os.path.exists(JOBS_FILE):
+            with open(JOBS_FILE, 'r') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+def _save_jobs(jobs_dict):
+    """Persist the jobs dict to disk (called while job_lock is held)."""
+    try:
+        with open(JOBS_FILE, 'w') as f:
+            json.dump(jobs_dict, f, indent=2)
+    except Exception as exc:
+        print(f"[WARN] Could not persist jobs: {exc}")
+
+# Bootstrap in-memory dict from disk so restarts are transparent.
+jobs = _load_jobs()
+
+# Any job that was 'running' or 'queued' when the server last died is now
+# orphaned — mark it as failed so the UI doesn't show it stuck forever.
+_changed = False
+for _jid, _job in jobs.items():
+    if _job.get('status') in ('running', 'queued'):
+        _job['status']   = 'failed'
+        _job['error']    = 'Server restarted while job was in progress'
+        _job['end_time'] = datetime.now().isoformat()
+        _changed = True
+if _changed:
+    _save_jobs(jobs)
 
 
 def clean_ansi_codes(text):
@@ -44,16 +82,201 @@ def clean_ansi_codes(text):
     return text
 
 
+def _get_dir_owner_uid(path):
+    """Return the uid of the given path, or None on error."""
+    try:
+        return os.stat(path).st_uid
+    except Exception:
+        return None
+
+
+def _remove_torvalds_repo(repo_path):
+    """
+    Remove the Torvalds bare-clone directory.
+
+    • If the directory is owned by root (uid == 0) → prompt the user for their
+      sudo password and invoke ``sudo rm -rf``.
+    • Otherwise → remove it directly with shutil.rmtree (no prompt shown).
+
+    Returns True on success, False on failure.
+    """
+    uid = _get_dir_owner_uid(repo_path)
+    is_root_owned = (uid == 0)
+
+    if is_root_owned:
+        print(
+            f"[INFO] '{repo_path}' is owned by root. "
+            "Sudo privileges are required to remove it."
+        )
+        try:
+            # Let sudo read the password from the real TTY by inheriting stdin.
+            result = subprocess.run(
+                ['sudo', 'rm', '-rf', repo_path],
+                stdin=sys.stdin,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if result.returncode != 0:
+                print(
+                    f"[ERROR] 'sudo rm -rf' failed: "
+                    f"{result.stderr.decode(errors='replace').strip()}"
+                )
+                return False
+            print(f"[INFO] '{repo_path}' removed successfully (via sudo).")
+            return True
+        except Exception as exc:
+            print(f"[ERROR] Exception while removing with sudo: {exc}")
+            return False
+    else:
+        # Not root-owned — remove silently without bothering the user.
+        try:
+            shutil.rmtree(repo_path)
+            print(f"[INFO] '{repo_path}' removed successfully.")
+            return True
+        except Exception as exc:
+            print(f"[ERROR] Failed to remove '{repo_path}': {exc}")
+            return False
+
+
 def clone_torvalds_repo_silent():
+    """
+    Ensure the Torvalds bare-clone is present and up to date.
+
+    Behaviour:
+      1. Repo does NOT exist  → clone it fresh (bare clone).
+      2. Repo DOES exist:
+         a. Run ``git fetch --all --tags`` inside the bare repo.
+         b. If fetch succeeds → done.
+         c. If fetch FAILS    → remove the stale repo (prompting for sudo only
+            when the directory is root-owned) and re-clone from scratch.
+    """
+    CLONE_URL = 'https://github.com/torvalds/linux.git'
+
+    def _clone():
+        print(f"[INFO] Cloning Torvalds Linux repo into '{TORVALDS_REPO}' ...")
+        result = subprocess.run(
+            ['git', 'clone', '--bare', CLONE_URL, TORVALDS_REPO],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        if result.returncode != 0:
+            print("[WARN] Clone failed (possible network issue). Continuing without it.")
+        else:
+            print("[INFO] Clone completed successfully.")
+
+    if not os.path.exists(TORVALDS_REPO):
+        # ── Case 1: Repo absent → fresh clone ───────────────────────────────
+        _clone()
+        return
+
+    # ── Case 2: Repo present → fetch latest tags ────────────────────────────
+    print(f"[INFO] Torvalds repo found at '{TORVALDS_REPO}'. Fetching latest tags ...")
+    fetch_result = subprocess.run(
+        ['git', 'fetch', '--all', '--tags'],
+        cwd=TORVALDS_REPO,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+    if fetch_result.returncode == 0:
+        print("[INFO] Fetch completed successfully.")
+        return
+
+    # Fetch failed → attempt removal + re-clone
+    err_msg = fetch_result.stderr.decode(errors='replace').strip()
+    print(f"[WARN] 'git fetch --all --tags' failed: {err_msg}")
+    print("[INFO] Removing stale repo and re-cloning ...")
+
+    if _remove_torvalds_repo(TORVALDS_REPO):
+        _clone()
+    else:
+        print("[ERROR] Could not remove stale repo. Skipping re-clone.")
+
+
+def _sync_torvalds_repo_to_log(log_file):
+    """
+    Called from inside the build background thread.
+    Runs the same clone/fetch logic as clone_torvalds_repo_silent() but
+    writes all status lines to *log_file* so the user can watch progress
+    in the live log viewer.
+
+    Any exception is caught and logged — a failure here must never prevent
+    the actual `make build` from running.
+    """
+    def _log(msg):
+        log_file.write(msg + '\n')
+        log_file.flush()
+
+    CLONE_URL = 'https://github.com/torvalds/linux.git'
+
+    def _clone():
+        _log(f"[repo-sync] Cloning Torvalds Linux repo into '{TORVALDS_REPO}' ...")
+        result = subprocess.run(
+            ['git', 'clone', '--bare', CLONE_URL, TORVALDS_REPO],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            check=False,
+        )
+        for line in (result.stdout or '').splitlines():
+            _log(f"[repo-sync] {line}")
+        if result.returncode != 0:
+            _log("[repo-sync] WARNING: Clone failed (possible network issue). Continuing anyway.")
+        else:
+            _log("[repo-sync] Clone completed successfully.")
+
     try:
         if not os.path.exists(TORVALDS_REPO):
-            subprocess.run(
-                ['git', 'clone', '--bare',
-                 'https://github.com/torvalds/linux.git', TORVALDS_REPO],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
+            _clone()
+            return
+
+        _log("[repo-sync] Torvalds repo found. Fetching latest tags ...")
+        fetch_result = subprocess.run(
+            ['git', 'fetch', '--all', '--tags'],
+            cwd=TORVALDS_REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            check=False,
+        )
+        for line in (fetch_result.stdout or '').splitlines():
+            _log(f"[repo-sync] {line}")
+
+        if fetch_result.returncode == 0:
+            _log("[repo-sync] Fetch completed successfully.")
+            return
+
+        _log(f"[repo-sync] WARNING: 'git fetch --all --tags' failed (exit {fetch_result.returncode}).")
+        _log("[repo-sync] Removing stale repo and re-cloning ...")
+
+        uid = _get_dir_owner_uid(TORVALDS_REPO)
+        if uid == 0:
+            _log("[repo-sync] Directory is root-owned — using sudo rm -rf ...")
+            rm_result = subprocess.run(
+                ['sudo', 'rm', '-rf', TORVALDS_REPO],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                check=False,
             )
-    except Exception:
-        pass
+            if rm_result.returncode != 0:
+                _log("[repo-sync] ERROR: sudo rm failed. Skipping re-clone.")
+                return
+            _log("[repo-sync] Removed successfully (via sudo).")
+        else:
+            try:
+                shutil.rmtree(TORVALDS_REPO)
+                _log("[repo-sync] Removed successfully.")
+            except Exception as exc:
+                _log(f"[repo-sync] ERROR: Could not remove stale repo: {exc}. Skipping re-clone.")
+                return
+
+        _clone()
+
+    except Exception as exc:
+        _log(f"[repo-sync] Unexpected error: {exc}. Skipping repo sync.")
 
 
 def get_distro_config():
@@ -134,55 +357,67 @@ def run_make_command(command, job_id):
     with job_lock:
         jobs[job_id]['status']        = 'running'
         jobs[job_id]['start_time']    = datetime.now().isoformat()
-        jobs[job_id]['live_log_file'] = live_log   # key fix: available while running
+        jobs[job_id]['live_log_file'] = live_log
+        _save_jobs(jobs)
 
     try:
-        process = subprocess.Popen(
-            command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            cwd=PROJECT_ROOT,
-            universal_newlines=True,
-            bufsize=1,
-            preexec_fn=os.setsid
-        )
-
-        with job_lock:
-            job_processes[job_id] = process
-
-        # Write every line to the log file immediately (line-buffered).
+        # Open the log file early so clone/fetch output is captured too.
+        # Keep it open for the entire lifetime of the process so that
+        # process.wait() and the final status update all happen while
+        # the file handle is still valid and flushable.
         with open(live_log, 'w') as lf:
+
+            # ── For build jobs: sync Torvalds repo first, logging all output ──
+            if command == 'make build':
+                _sync_torvalds_repo_to_log(lf)
+
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                cwd=PROJECT_ROOT,
+                universal_newlines=True,
+                bufsize=1,
+                preexec_fn=os.setsid
+            )
+
+            with job_lock:
+                job_processes[job_id] = process
+
+            # Stream every output line to disk immediately (line-buffered).
             for line in process.stdout:
                 lf.write(line)
                 lf.flush()
 
-        process.wait()
-        exit_code = process.returncode
+            # Wait for the process to fully exit (stdout already drained above).
+            process.wait()
+            exit_code = process.returncode
 
-        with job_lock:
-            job_processes.pop(job_id, None)
+            # Write a trailing separator so the log viewer shows a clean finish.
+            lf.write(f'\n--- process exited with code {exit_code} ---\n')
+            lf.flush()
 
-        with job_lock:
-            if exit_code in (-9, -15):
-                jobs[job_id]['status'] = 'killed'
-            else:
-                jobs[job_id]['status'] = 'completed' if exit_code == 0 else 'failed'
-            jobs[job_id]['exit_code'] = exit_code
-            jobs[job_id]['end_time']  = datetime.now().isoformat()
-            jobs[job_id]['log_file']  = live_log
+            with job_lock:
+                job_processes.pop(job_id, None)
+                if exit_code in (-9, -15):
+                    jobs[job_id]['status'] = 'killed'
+                else:
+                    jobs[job_id]['status'] = 'completed' if exit_code == 0 else 'failed'
+                jobs[job_id]['exit_code'] = exit_code
+                jobs[job_id]['end_time']  = datetime.now().isoformat()
+                jobs[job_id]['log_file']  = live_log
+                _save_jobs(jobs)
 
     except Exception as e:
         with job_lock:
             jobs[job_id]['status']   = 'failed'
             jobs[job_id]['error']    = str(e)
             jobs[job_id]['end_time'] = datetime.now().isoformat()
+            jobs[job_id]['log_file'] = live_log   # still point to the file even on error
             job_processes.pop(job_id, None)
+            _save_jobs(jobs)
 
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
@@ -338,7 +573,6 @@ def set_config():
             f.write(f'VM_IP="{config_data.get("VM_IP", "")}"\n')
             f.write(f'VM_ROOT_PWD=\'{config_data.get("VM_ROOT_PWD", "")}\'\n')
 
-
             f.write('\n# Repository\n')
             f.write(f'TORVALDS_REPO="{os.path.join(PROJECT_ROOT, ".torvalds-linux")}"\n')
 
@@ -381,13 +615,13 @@ def list_tests():
 
 @app.route('/api/build', methods=['POST'])
 def build():
-    clone_torvalds_repo_silent()
     job_id = str(uuid.uuid4())
     with job_lock:
         jobs[job_id] = {
             'id': job_id, 'command': 'make build',
             'status': 'queued', 'created_time': datetime.now().isoformat()
         }
+        _save_jobs(jobs)
     threading.Thread(target=run_make_command, args=('make build', job_id), daemon=True).start()
     return jsonify({'job_id': job_id})
 
@@ -400,6 +634,7 @@ def test_all():
             'id': job_id, 'command': 'make test',
             'status': 'queued', 'created_time': datetime.now().isoformat()
         }
+        _save_jobs(jobs)
     threading.Thread(target=run_make_command, args=('make test', job_id), daemon=True).start()
     return jsonify({'job_id': job_id})
 
@@ -417,6 +652,7 @@ def test_specific(test_name):
             'id': job_id, 'command': command, 'test_name': test_name,
             'status': 'queued', 'created_time': datetime.now().isoformat()
         }
+        _save_jobs(jobs)
     threading.Thread(target=run_make_command, args=(command, job_id), daemon=True).start()
     return jsonify({'job_id': job_id})
 
@@ -429,6 +665,7 @@ def clean():
             'id': job_id, 'command': 'make clean',
             'status': 'queued', 'created_time': datetime.now().isoformat()
         }
+        _save_jobs(jobs)
     threading.Thread(target=run_make_command, args=('make clean', job_id), daemon=True).start()
     return jsonify({'job_id': job_id})
 
@@ -441,6 +678,7 @@ def reset():
             'id': job_id, 'command': 'make reset',
             'status': 'queued', 'created_time': datetime.now().isoformat()
         }
+        _save_jobs(jobs)
     threading.Thread(target=run_make_command, args=('make reset', job_id), daemon=True).start()
     return jsonify({'job_id': job_id})
 
@@ -462,6 +700,7 @@ def kill_job(job_id):
             jobs[job_id]['status']   = 'killed'
             jobs[job_id]['end_time'] = datetime.now().isoformat()
             job_processes.pop(job_id, None)
+            _save_jobs(jobs)
         return jsonify({'message': 'Job killed successfully', 'job_id': job_id})
     except Exception as e:
         return jsonify({'error': f'Failed to kill job: {str(e)}'}), 500

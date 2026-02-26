@@ -144,10 +144,79 @@ run_kernel_build() {
   echo ""
 }
 
+# get_host_password
+get_host_password() {
+  if [ -n "${HOST_USER_PWD:-}" ]; then
+    echo "${HOST_USER_PWD}"
+  else
+    local pwd_input
+    read -r -s -p "Enter sudo password to remove Torvalds repo: " pwd_input < /dev/tty
+    echo "" > /dev/tty
+    echo "${pwd_input}"
+  fi
+}
+
+# delete_repo
+delete_repo() {
+  if [ ! -d "$TORVALDS_REPO" ]; then
+    return 0
+  fi
+
+  echo -e "${BLUE}  → Removing corrupted repository...${NC}"
+  local owner
+  owner=$(stat -c '%U' "$TORVALDS_REPO")
+
+  if [ "$owner" = "root" ]; then
+    echo -e "${YELLOW}  → Repository is owned by root. Sudo password required.${NC}"
+    local host_pass
+    host_pass=$(get_host_password)
+    echo "$host_pass" | sudo -S rm -rf "$TORVALDS_REPO"
+  else
+    rm -rf "$TORVALDS_REPO"
+  fi
+}
+
+# _clone_torvalds
+_clone_torvalds() {
+  git clone --bare https://github.com/torvalds/linux.git "$TORVALDS_REPO" 2>&1 | \
+    stdbuf -oL tr '\r' '\n' | \
+    grep -oP '\d+(?=%)' | \
+    awk '{printf "\rProgress: %d%%", $1; fflush()}'
+  # Ensure the directory is accessible regardless of umask/ownership edge cases
+  git config --global --add safe.directory "$TORVALDS_REPO" 2>/dev/null || true
+  echo ""
+}
+
+# sync_torvalds_repo
+sync_torvalds_repo() {
+  if [ ! -d "$TORVALDS_REPO" ]; then
+    echo -e "${BLUE}  → Cloning Torvalds Linux repository...${NC}"
+    _clone_torvalds
+    echo -e "${GREEN}  → Repository cloned successfully.${NC}"
+  else
+    echo -e "${GREEN}  → Torvalds repository already exists.${NC}"
+    echo -e "${BLUE}  → Fetching latest tags...${NC}"
+    if (cd "$TORVALDS_REPO" && git fetch --all --tags 2>&1 | grep -v "^From"); then
+      echo -e "${GREEN}  → Repository updated successfully.${NC}"
+    else
+      echo -e "${RED}  → Fetch failed. Re-cloning repository...${NC}"
+      delete_repo
+      echo -e "${BLUE}  → Re-cloning Torvalds Linux repository...${NC}"
+      _clone_torvalds
+      echo -e "${GREEN}  → Repository re-cloned successfully.${NC}"
+    fi
+  fi
+  echo ""
+}
+
 # ---- TEST DEFINITIONS ----
 
 test_check_dependency() {
   echo -e "${BLUE}Test-1: check_dependency${NC}"
+
+  # Ensure Torvalds repo is present and up to date before running the check
+  sync_torvalds_repo
+
   cd "${LINUX_SRC_PATH}"
 
   # Get list of applied commits (those that are ahead of the reset point)
